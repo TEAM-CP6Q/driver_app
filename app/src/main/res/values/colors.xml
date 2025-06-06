@@ -22,7 +22,7 @@
     <!-- 배경 색상 -->
     <color name="colorBackgroundDark">#1E2A38</color>
     <color name="colorBackgroundLight">#F8F9FA</color>
-    <color name="colorSelectedBackground">#E8F5E8</color>
+
 
     <!-- 텍스트 색상 -->
     <color name="colorTextPrimary">#212121</color>
@@ -33,5 +33,34 @@
     <color name="colorWhite">#FFFFFF</color>
     <color name="colorWhiteAlpha">#CCFFFFFF</color>
     <color name="colorBlack">#000000</color>
+
+
+    <color name="colorSelectedBackground">#E3F2FD</color>
+
+    <!-- 카드 테두리 색상 -->
     <color name="colorCardStroke">#E0E0E0</color>
+
+    <!-- 추가 상태 색상들 -->
+    <color name="colorInProgress">#FFC107</color>
+    <color name="colorPending">#FF9800</color>
+    <color name="colorUrgent">#F44336</color>
+
+    <!-- 투명도가 있는 색상들 -->
+    <color name="colorBlackTransparent">#88000000</color>
+    <color name="colorWhiteTransparent">#88FFFFFF</color>
+
+    <!-- 그라데이션용 색상들 -->
+    <color name="colorGradientStart">#4CAF50</color>
+    <color name="colorGradientEnd">#2196F3</color>
+
+    <!-- 네비게이션 관련 색상들 -->
+    <color name="colorNavigation">#FF5722</color>
+    <color name="colorRoute">#3F51B5</color>
+    <color name="colorCurrentLocation">#2196F3</color>
+
+    <!-- 상태별 마커 색상들 -->
+    <color name="colorMarkerDefault">#F44336</color>
+    <color name="colorMarkerSelected">#FF9800</color>
+    <color name="colorMarkerCompleted">#4CAF50</color>
+    <color name="colorMarkerCurrent">#2196F3</color>
 </resources>

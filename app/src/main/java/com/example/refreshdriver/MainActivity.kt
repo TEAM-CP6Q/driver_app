@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1234
+        private const val TAG = "MainActivity"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,10 +46,12 @@ class MainActivity : AppCompatActivity() {
         checkAutoLogin()
         setupClickListeners()
         checkLocationPermission()
+
+        // 카카오 네비 SDK 미리 초기화 (앱 시작 시)
+        initializeKakaoSDKEarly()
     }
 
     private fun initViews() {
-        // 로그인 관련 뷰
         emailEditText = findViewById(R.id.editTextEmail)
         passwordEditText = findViewById(R.id.editTextPassword)
         loginButton = findViewById(R.id.buttonLogin)
@@ -61,7 +65,6 @@ class MainActivity : AppCompatActivity() {
     private fun checkAutoLogin() {
         val savedToken = sharedPreferences.getString("token", null)
         if (!savedToken.isNullOrEmpty()) {
-            // 토큰이 있으면 바로 수거지 목록으로 이동
             navigateToPickupList()
         }
     }
@@ -71,7 +74,7 @@ class MainActivity : AppCompatActivity() {
             performLogin()
         }
 
-        // 로그인 버튼을 길게 누르면 네비게이션 테스트 실행 (개발용)
+        // 개발용 테스트 모드
         loginButton.setOnLongClickListener {
             checkPermissionAndStartNavigation()
             true
@@ -79,8 +82,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 로그인 수행
+     * 앱 시작 시 카카오 네비 SDK를 미리 초기화
      */
+    private fun initializeKakaoSDKEarly() {
+        Thread {
+            try {
+                Log.d(TAG, "카카오 네비 SDK 사전 초기화 시작")
+
+                RefreshApplication.knsdk.apply {
+                    initializeWithAppKey(
+                        aAppKey = "573a700f121bff5d3ea3960ff32de487",
+                        aClientVersion = "1.0",
+                        aUserKey = "testUser",
+                        aLangType = KNLanguageType.KNLanguageType_KOREAN
+                    ) { error ->
+                        runOnUiThread {
+                            if (error != null) {
+                                Log.e(TAG, "카카오 네비 SDK 사전 초기화 실패: ${error.code}")
+                                sharedPreferences.edit().putBoolean("kakao_sdk_initialized", false).apply()
+                            } else {
+                                Log.d(TAG, "카카오 네비 SDK 사전 초기화 성공")
+                                sharedPreferences.edit().putBoolean("kakao_sdk_initialized", true).apply()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "카카오 네비 SDK 사전 초기화 중 예외", e)
+                runOnUiThread {
+                    sharedPreferences.edit().putBoolean("kakao_sdk_initialized", false).apply()
+                }
+            }
+        }.start()
+    }
+
     private fun performLogin() {
         val email = emailEditText.text.toString().trim()
         val password = passwordEditText.text.toString().trim()
@@ -97,7 +132,6 @@ class MainActivity : AppCompatActivity() {
                 is NetworkResult.Success -> {
                     val loginResponse = result.data
 
-                    // 로그인 정보 저장
                     with(sharedPreferences.edit()) {
                         putString("token", loginResponse.token)
                         putString("email", loginResponse.user.email)
@@ -109,8 +143,8 @@ class MainActivity : AppCompatActivity() {
                     showLoading(false)
                     Toast.makeText(this@MainActivity, "로그인 성공", Toast.LENGTH_SHORT).show()
 
-                    // 카카오 네비 SDK 초기화 후 수거지 목록으로 이동
-                    initializeKakaoSDK {
+                    // 로그인 성공 후 네비 SDK 확인 및 목록으로 이동
+                    ensureKakaoSDKInitialized {
                         navigateToPickupList()
                     }
                 }
@@ -121,22 +155,18 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is NetworkResult.Loading -> {
-                    // 이미 로딩 중
+                    // 로딩 중
                 }
             }
         }
     }
 
-    /**
-     * 위치 권한 확인
-     */
     private fun checkLocationPermission() {
         when {
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED -> {
-                // 권한이 없으면 요청
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -146,9 +176,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 네비게이션 테스트를 위한 권한 확인 및 시작 (개발용)
-     */
     private fun checkPermissionAndStartNavigation() {
         when {
             ContextCompat.checkSelfPermission(
@@ -162,8 +189,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             else -> {
-                initializeKakaoSDK {
-                    // 인증 성공 후 네비게이션 테스트 액티비티로 이동
+                ensureKakaoSDKInitialized {
                     Toast.makeText(this, "네비게이션 테스트 모드", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, NavigationActivity::class.java)
                     startActivity(intent)
@@ -173,41 +199,74 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 카카오 네비 SDK 초기화
+     * 카카오 네비 SDK가 초기화되었는지 확인하고, 필요시 재초기화
+     */
+    private fun ensureKakaoSDKInitialized(onSuccess: () -> Unit) {
+        // SDK 초기화 상태를 SharedPreferences로 관리
+        val isSDKInitialized = sharedPreferences.getBoolean("kakao_sdk_initialized", false)
+
+        if (isSDKInitialized) {
+            Log.d(TAG, "카카오 네비 SDK 이미 초기화됨 (캐시됨)")
+            onSuccess()
+        } else {
+            Log.d(TAG, "카카오 네비 SDK 재초기화 필요")
+            initializeKakaoSDK(onSuccess)
+        }
+    }
+
+    /**
+     * 카카오 네비 SDK 초기화 (기존 방식)
      */
     private fun initializeKakaoSDK(onSuccess: () -> Unit) {
-        RefreshApplication.knsdk.apply {
-            initializeWithAppKey(
-                aAppKey = "573a700f121bff5d3ea3960ff32de487", // 카카오디벨로퍼스에서 부여 받은 앱 키
-                aClientVersion = "1.0", // 현재 앱의 클라이언트 버전
-                aUserKey = "refreshDriverUser", // 사용자 id
-                aLangType = KNLanguageType.KNLanguageType_KOREAN, // 언어 타입
-                aCompletion = { error ->
-                    // Toast는 UI를 갱신하는 작업이기 때문에 UIThread에서 동작되도록 해야 합니다.
+        try {
+            RefreshApplication.knsdk.apply {
+                initializeWithAppKey(
+                    aAppKey = "573a700f121bff5d3ea3960ff32de487",
+                    aClientVersion = "1.0",
+                    aUserKey = "refreshDriverUser_${System.currentTimeMillis()}",
+                    aLangType = KNLanguageType.KNLanguageType_KOREAN
+                ) { error ->
                     runOnUiThread {
                         if (error != null) {
+                            Log.e(TAG, "카카오 네비 SDK 초기화 실패: ${error.code}")
                             Toast.makeText(
                                 applicationContext,
                                 "카카오 네비 SDK 인증에 실패했습니다: ${error.code}",
                                 Toast.LENGTH_LONG
                             ).show()
+
+                            // 초기화 실패 시 캐시 제거
+                            sharedPreferences.edit().putBoolean("kakao_sdk_initialized", false).apply()
                         } else {
+                            Log.d(TAG, "카카오 네비 SDK 초기화 성공")
                             Toast.makeText(
                                 applicationContext,
                                 "카카오 네비 SDK 인증 성공",
                                 Toast.LENGTH_SHORT
                             ).show()
+
+                            // 초기화 성공 시 캐시 저장
+                            sharedPreferences.edit().putBoolean("kakao_sdk_initialized", true).apply()
                             onSuccess()
                         }
                     }
                 }
-            )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "카카오 네비 SDK 초기화 중 예외", e)
+            runOnUiThread {
+                Toast.makeText(
+                    this,
+                    "SDK 초기화 중 오류가 발생했습니다: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                // 예외 발생 시 캐시 제거
+                sharedPreferences.edit().putBoolean("kakao_sdk_initialized", false).apply()
+            }
         }
     }
 
-    /**
-     * GPS 위치 권한 요청의 결과를 확인합니다.
-     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -216,9 +275,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED
-                ) {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "위치 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_LONG).show()
@@ -237,6 +294,6 @@ class MainActivity : AppCompatActivity() {
     private fun navigateToPickupList() {
         val intent = Intent(this, PickupListActivity::class.java)
         startActivity(intent)
-        finish() // MainActivity 종료
+        finish()
     }
 }

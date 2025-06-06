@@ -5,23 +5,21 @@ import android.content.Intent
 import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.refreshdriver.models.Pickup
-import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.kakao.vectormap.*
 import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.*
 import com.kakao.vectormap.shape.*
 import kotlinx.coroutines.launch
-import com.kakao.vectormap.shape.PolylineOptions
-import com.kakao.vectormap.shape.MapPoints
-
-
 import kotlin.math.*
 
 class MapActivity : AppCompatActivity() {
@@ -49,6 +47,7 @@ class MapActivity : AppCompatActivity() {
     companion object {
         private const val MAP_ZOOM_LEVEL = 12
         private const val DETAIL_ZOOM_LEVEL = 15
+        private const val TAG = "MapActivity"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +55,7 @@ class MapActivity : AppCompatActivity() {
         setContentView(R.layout.activity_map)
 
         initViews()
+        setupToolbar()
         loadIntentData()
         setupClickListeners()
         initializeKakaoMap()
@@ -72,13 +72,25 @@ class MapActivity : AppCompatActivity() {
         progressBarRoute = findViewById(R.id.progressBarRoute)
     }
 
-    // onCreate에서 데이터 수신
+    private fun setupToolbar() {
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            title = "수거지 지도"
+        }
+    }
+
     private fun loadIntentData() {
         val pickupList = intent.getParcelableArrayListExtra<Pickup>("pickups")
-        pickupList?.let { allPickups.addAll(it) }
+        pickupList?.let {
+            allPickups.addAll(it)
+            Log.d(TAG, "전체 수거지 개수: ${allPickups.size}")
+        }
 
         val selectedList = intent.getParcelableArrayListExtra<Pickup>("selectedPickups")
-        selectedList?.let { selectedPickups.addAll(it) }
+        selectedList?.let {
+            selectedPickups.addAll(it)
+            Log.d(TAG, "선택된 수거지 개수: ${selectedPickups.size}")
+        }
 
         val currentLat = intent.getDoubleExtra("currentLatitude", 0.0)
         val currentLng = intent.getDoubleExtra("currentLongitude", 0.0)
@@ -87,9 +99,9 @@ class MapActivity : AppCompatActivity() {
                 latitude = currentLat
                 longitude = currentLng
             }
+            Log.d(TAG, "현재 위치: $currentLat, $currentLng")
         }
     }
-
 
     private fun setupClickListeners() {
         fabNavigation.setOnClickListener { startNavigation() }
@@ -101,12 +113,16 @@ class MapActivity : AppCompatActivity() {
 
     private fun initializeKakaoMap() {
         mapView.start(object : MapLifeCycleCallback() {
-            override fun onMapDestroy() {}
+            override fun onMapDestroy() {
+                Log.d(TAG, "지도 파괴됨")
+            }
             override fun onMapError(error: Exception) {
+                Log.e(TAG, "지도 오류", error)
                 Toast.makeText(this@MapActivity, "지도 로딩 실패: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         }, object : KakaoMapReadyCallback() {
             override fun onMapReady(map: KakaoMap) {
+                Log.d(TAG, "지도 준비 완료")
                 kakaoMap = map
                 setupMap()
             }
@@ -115,11 +131,14 @@ class MapActivity : AppCompatActivity() {
 
     private fun setupMap() {
         kakaoMap?.let { map ->
+            // 라벨 클릭 이벤트 설정
             map.setOnLabelClickListener { _: KakaoMap, _: LabelLayer, label: Label ->
                 val pickup = label.tag as? Pickup
                 pickup?.let { showPickupInfoWindow(it) }
                 true
             }
+
+            // 지도 구성 요소 표시
             displayCurrentLocationLabel()
             displayPickupLabels()
             displaySelectedRoute()
@@ -131,45 +150,87 @@ class MapActivity : AppCompatActivity() {
     private fun displayCurrentLocationLabel() {
         currentLocation?.let { location ->
             kakaoMap?.let { map ->
-                // 기존 마커 제거
-                currentLocationLabel?.let {
-                    map.labelManager?.layer?.remove(it)
+                try {
+                    // 기존 현재 위치 마커 제거
+                    currentLocationLabel?.let {
+                        map.labelManager?.layer?.remove(it)
+                    }
+
+                    val position = LatLng.from(location.latitude, location.longitude)
+
+                    // 현재 위치 마커 스타일 생성
+                    val labelStyle = LabelStyle.from(R.drawable.ic_current_location)
+                        .setZoomLevel(8)
+                    val labelStyles = LabelStyles.from(labelStyle)
+
+                    val labelOptions = LabelOptions.from(position)
+                        .setStyles(labelStyles)
+                        .setTexts(LabelTextBuilder().setTexts("현재 위치"))
+
+                    currentLocationLabel = map.labelManager?.layer?.addLabel(labelOptions)
+                    Log.d(TAG, "현재 위치 마커 추가됨")
+                } catch (e: Exception) {
+                    Log.e(TAG, "현재 위치 마커 추가 실패", e)
                 }
-
-                val position = LatLng.from(location.latitude, location.longitude)
-                val labelStyle = LabelStyle.from(android.R.drawable.ic_menu_mylocation)
-                val labelStyles = LabelStyles.from(labelStyle)
-                val labelOptions = LabelOptions.from(position)
-                    .setStyles(labelStyles)
-                    .setTexts(LabelTextBuilder().setTexts("현재 위치"))
-
-                currentLocationLabel = map.labelManager?.layer?.addLabel(labelOptions)
             }
         }
     }
 
     private fun displayPickupLabels() {
         kakaoMap?.let { map ->
-            pickupLabels.values.forEach { map.labelManager?.layer?.remove(it) }
-            pickupLabels.clear()
-            allPickups.forEach { pickup ->
-                val lat = pickup.latitude
-                val lng = pickup.longitude
-                if (lat != null && lng != null) {
-                    val position = LatLng.from(lat, lng)
-                    val labelStyle = LabelStyle.from(android.R.drawable.presence_busy)
-                    val labelStyles = LabelStyles.from(labelStyle)
-                    val labelOptions = LabelOptions.from(position)
-                        .setStyles(labelStyles)
-                        .setTexts(LabelTextBuilder().setTexts((pickup.address ?: "수거지").toString()))
-                        .setTag(pickup)
-                    val label = map.labelManager?.layer?.addLabel(labelOptions)
-                    label?.let { pickupLabels[pickup.pickupId] = it }
+            try {
+                // 기존 수거지 마커들 제거
+                pickupLabels.values.forEach {
+                    map.labelManager?.layer?.remove(it)
                 }
+                pickupLabels.clear()
+
+                Log.d(TAG, "수거지 마커 생성 시작: ${allPickups.size}개")
+
+                allPickups.forEachIndexed { index, pickup ->
+                    val lat = pickup.latitude
+                    val lng = pickup.longitude
+
+                    if (lat != null && lng != null) {
+                        val position = LatLng.from(lat, lng)
+
+                        // 선택된 수거지인지 확인
+                        val isSelected = selectedPickups.any { it.pickupId == pickup.pickupId }
+
+                        // 완료 상태에 따른 마커 색상 결정
+                        val markerResource = when {
+                            pickup.isCompleted -> R.drawable.ic_marker_green // 완료된 수거지
+                            isSelected -> R.drawable.ic_marker_orange // 선택된 수거지
+                            else -> R.drawable.ic_marker_red // 일반 수거지
+                        }
+
+                        val labelStyle = LabelStyle.from(markerResource)
+                            .setZoomLevel(8)
+                        val labelStyles = LabelStyles.from(labelStyle)
+
+                        val addressText = pickup.address?.name ?: pickup.address?.roadNameAddress ?: "수거지 ${index + 1}"
+
+                        val labelOptions = LabelOptions.from(position)
+                            .setStyles(labelStyles)
+                            .setTexts(LabelTextBuilder().setTexts(addressText))
+                            .setTag(pickup)
+
+                        val label = map.labelManager?.layer?.addLabel(labelOptions)
+                        label?.let {
+                            pickupLabels[pickup.pickupId] = it
+                            Log.d(TAG, "수거지 마커 추가: ${pickup.pickupId} at ($lat, $lng)")
+                        }
+                    } else {
+                        Log.w(TAG, "수거지 좌표 없음: ${pickup.pickupId}")
+                    }
+                }
+
+                Log.d(TAG, "수거지 마커 생성 완료: ${pickupLabels.size}개")
+            } catch (e: Exception) {
+                Log.e(TAG, "수거지 마커 생성 실패", e)
             }
         }
     }
-
 
     private fun displaySelectedRoute() {
         // 기존 경로선 제거
@@ -191,6 +252,7 @@ class MapActivity : AppCompatActivity() {
                 drawRoutePolyline(optimizedPickups)
                 showRouteProgress(false)
             } catch (e: Exception) {
+                Log.e(TAG, "경로 표시 실패", e)
                 showRouteProgress(false)
                 Toast.makeText(this@MapActivity, "경로 표시 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
             }
@@ -198,37 +260,39 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun drawRoutePolyline(optimizedPickups: List<Pickup>) {
-        val points = mutableListOf<LatLng>()
+        try {
+            val points = mutableListOf<LatLng>()
 
-        currentLocation?.let {
-            points.add(LatLng.from(it.latitude, it.longitude))
-        }
+            // 현재 위치 추가
+            currentLocation?.let {
+                points.add(LatLng.from(it.latitude, it.longitude))
+            }
 
-        optimizedPickups.forEach { pickup ->
-            pickup.latitude?.let { lat ->
-                pickup.longitude?.let { lng ->
-                    points.add(LatLng.from(lat, lng))
+            // 최적화된 수거지 순서대로 추가
+            optimizedPickups.forEach { pickup ->
+                pickup.latitude?.let { lat ->
+                    pickup.longitude?.let { lng ->
+                        points.add(LatLng.from(lat, lng))
+                    }
                 }
             }
-        }
 
-        if (points.size >= 2) {
-            kakaoMap?.let { map ->
-                // MapPoints 생성 (공식 문서 방식)
-                val mapPoints = MapPoints.fromLatLng(points)
+            if (points.size >= 2) {
+                kakaoMap?.let { map ->
+                    val mapPoints = MapPoints.fromLatLng(points)
+                    val polylineOptions = PolylineOptions.from(mapPoints, 8.0f, Color.BLUE)
 
-                // PolylineOptions 생성 (공식 문서 방식)
-                // 굵기(Width)는 Int, 색상은 Int
-                val polylineOptions = PolylineOptions.from(mapPoints, 8.0f, Color.BLUE)
+                    // 기존 경로선 제거
+                    routePolyline?.let { map.shapeManager?.layer?.remove(it) }
+                    routePolyline = map.shapeManager?.layer?.addPolyline(polylineOptions)
 
-                // 기존 경로선 제거
-                routePolyline?.let { map.shapeManager?.layer?.remove(it) }
-                routePolyline = map.shapeManager?.layer?.addPolyline(polylineOptions)
+                    Log.d(TAG, "경로선 그리기 완료: ${points.size}개 포인트")
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "경로선 그리기 실패", e)
         }
     }
-
-
 
     @SuppressLint("DefaultLocale")
     private fun calculateRouteInfo(optimizedPickups: List<Pickup>) {
@@ -252,7 +316,7 @@ class MapActivity : AppCompatActivity() {
             }
         }
 
-        val estimatedTime = (totalDistance * 2).toInt()
+        val estimatedTime = (totalDistance * 2).toInt() // 시속 30km 가정
         textRouteInfo.text = "총 거리: ${String.format("%.1f", totalDistance)}km, 예상 시간: ${estimatedTime}분"
     }
 
@@ -272,7 +336,7 @@ class MapActivity : AppCompatActivity() {
         val isSelected = selectedPickups.any { it.pickupId == pickup.pickupId }
 
         val dialogMessage = buildString {
-            append("주소: ${pickup.address ?: "주소 없음"}\n")
+            append("주소: ${pickup.address?.roadNameAddress ?: pickup.address?.name ?: "주소 없음"}\n")
             append("상태: ${if (pickup.isCompleted) "완료" else "미완료"}\n")
 
             if (currentLocation != null && pickup.latitude != null && pickup.longitude != null) {
@@ -285,7 +349,7 @@ class MapActivity : AppCompatActivity() {
         }
 
         AlertDialog.Builder(this)
-            .setTitle((pickup.address ?: "수거지") as CharSequence)
+            .setTitle(pickup.address?.name ?: pickup.address?.roadNameAddress ?: "수거지")
             .setMessage(dialogMessage)
             .setPositiveButton("확인", null)
             .setNeutralButton(if (isSelected) "선택 해제" else "선택") { _, _ ->
@@ -298,16 +362,18 @@ class MapActivity : AppCompatActivity() {
         val isCurrentlySelected = selectedPickups.any { it.pickupId == pickup.pickupId }
         if (isCurrentlySelected) {
             selectedPickups.removeAll { it.pickupId == pickup.pickupId }
+            pickup.isSelected = false
         } else {
             selectedPickups.add(pickup)
+            pickup.isSelected = true
         }
-        updateLabelStyles()
+
+        // 마커 스타일 업데이트
+        displayPickupLabels()
         displaySelectedRoute()
         updateFabVisibility()
-    }
 
-    private fun updateLabelStyles() {
-        displayPickupLabels() // 전체 라벨 다시 그리기
+        Log.d(TAG, "수거지 선택 토글: ${pickup.pickupId}, 선택됨: ${!isCurrentlySelected}")
     }
 
     private fun updateFabVisibility() {
@@ -334,6 +400,7 @@ class MapActivity : AppCompatActivity() {
                 Toast.makeText(this@MapActivity, "경로가 최적화되었습니다.", Toast.LENGTH_SHORT).show()
                 showRouteProgress(false)
             } catch (e: Exception) {
+                Log.e(TAG, "경로 최적화 실패", e)
                 showRouteProgress(false)
                 Toast.makeText(this@MapActivity, "경로 최적화 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
             }
@@ -376,13 +443,19 @@ class MapActivity : AppCompatActivity() {
 
     private fun clearRoute() {
         selectedPickups.clear()
+
+        // 모든 수거지의 선택 상태 초기화
+        allPickups.forEach { it.isSelected = false }
+
         routePolyline?.let { polyline ->
             kakaoMap?.shapeManager?.layer?.remove(polyline)
         }
         routePolyline = null
+
+        displayPickupLabels() // 마커 색상 업데이트
         displaySelectedRoute()
-        updateLabelStyles()
         updateFabVisibility()
+
         Toast.makeText(this, "경로가 초기화되었습니다.", Toast.LENGTH_SHORT).show()
     }
 
@@ -407,7 +480,7 @@ class MapActivity : AppCompatActivity() {
     }
 
     private fun adjustMapBounds() {
-        if (allPickups.isEmpty()) return
+        if (allPickups.isEmpty() && currentLocation == null) return
 
         kakaoMap?.let { map ->
             var minLat = Double.MAX_VALUE
@@ -446,6 +519,7 @@ class MapActivity : AppCompatActivity() {
                     MAP_ZOOM_LEVEL
                 )
                 map.moveCamera(cameraUpdate)
+                Log.d(TAG, "지도 범위 조정 완료: center($centerLat, $centerLng)")
             }
         }
     }
@@ -470,6 +544,65 @@ class MapActivity : AppCompatActivity() {
         intent.putParcelableArrayListExtra("selectedPickups", ArrayList(selectedPickups))
         setResult(RESULT_OK, intent)
         finish()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_map, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                returnToList()
+                true
+            }
+            R.id.action_satellite -> {
+                // 위성지도 토글 (카카오맵 API에서 지원하는 경우)
+                Toast.makeText(this, "위성지도 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.action_auto_select -> {
+                autoSelectNearbyPickups()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun autoSelectNearbyPickups() {
+        if (currentLocation == null) {
+            Toast.makeText(this, "현재 위치를 확인할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 현재 선택 초기화
+        selectedPickups.clear()
+        allPickups.forEach { it.isSelected = false }
+
+        // 미완료 수거지 중 가까운 5개 자동 선택
+        val nearbyPickups = allPickups
+            .filter { !it.isCompleted && it.latitude != null && it.longitude != null }
+            .sortedBy { pickup ->
+                calculateDistance(
+                    currentLocation!!.latitude,
+                    currentLocation!!.longitude,
+                    pickup.latitude!!,
+                    pickup.longitude!!
+                )
+            }
+            .take(5)
+
+        nearbyPickups.forEach { pickup ->
+            pickup.isSelected = true
+            selectedPickups.add(pickup)
+        }
+
+        displayPickupLabels()
+        displaySelectedRoute()
+        updateFabVisibility()
+
+        Toast.makeText(this, "${nearbyPickups.size}개의 수거지가 자동 선택되었습니다.", Toast.LENGTH_SHORT).show()
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -27,16 +27,11 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
-
-// LocationHelper 클래스
-class LocationHelper(private val context: AppCompatActivity) {
-    fun getCurrentLocation(callback: (Location?) -> Unit) {
-        callback(null)
-    }
-}
 
 class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListener {
 
@@ -54,7 +49,6 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
     private lateinit var pickupAdapter: PickupAdapter
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationHelper: LocationHelper
     private val repository = PickupRepository()
 
     private val allPickups = mutableListOf<Pickup>()
@@ -66,6 +60,7 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        private const val MAP_ACTIVITY_REQUEST_CODE = 1002
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,6 +102,12 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
     private fun setupRecyclerView() {
         pickupAdapter = PickupAdapter(filteredPickups, this)
+
+        // 현재 위치가 있으면 어댑터에 전달
+        currentLocation?.let { location ->
+            pickupAdapter.updateCurrentLocation(location)
+        }
+
         recyclerView.apply {
             adapter = pickupAdapter
             layoutManager = LinearLayoutManager(this@PickupListActivity)
@@ -148,25 +149,20 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
     private fun setupLocationServices() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        locationHelper = LocationHelper(this)
     }
 
     private fun setupClickListeners() {
-        // 지도 버튼 클릭 시 선택된 수거지와 함께 지도 액티비티 실행
-        // 지도 버튼 클릭 시
         fabMap.setOnClickListener {
             val selectedPickups = pickupAdapter.getSelectedPickups()
             val intent = Intent(this, MapActivity::class.java).apply {
                 putParcelableArrayListExtra("selectedPickups", ArrayList(selectedPickups))
-                putParcelableArrayListExtra("pickups", ArrayList(allPickups)) // 전체 목록도 전달
+                putParcelableArrayListExtra("pickups", ArrayList(allPickups))
                 putExtra("currentLatitude", currentLocation?.latitude ?: 0.0)
                 putExtra("currentLongitude", currentLocation?.longitude ?: 0.0)
             }
-            startActivity(intent)
+            startActivityForResult(intent, MAP_ACTIVITY_REQUEST_CODE)
         }
 
-
-        // 내비게이션 버튼 클릭 시 기존 로직 유지
         fabNavigation.setOnClickListener {
             val selectedPickups = pickupAdapter.getSelectedPickups()
             if (selectedPickups.isNotEmpty()) {
@@ -176,7 +172,6 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
             }
         }
 
-        // 나머지 버튼들 기존 로직 유지
         findViewById<Button>(R.id.buttonAutoSelect).setOnClickListener {
             autoSelectOptimalRoute()
         }
@@ -185,7 +180,6 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
             clearSelection()
         }
     }
-
 
     private fun checkLocationPermissions() {
         when {
@@ -217,7 +211,49 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             currentLocation = location
-            applyFilterAndSort()
+
+            // 어댑터에 현재 위치 전달
+            if (::pickupAdapter.isInitialized) {
+                pickupAdapter.updateCurrentLocation(location)
+            }
+
+            if (location == null) {
+                requestLocationUpdate()
+            } else {
+                applyFilterAndSort()
+            }
+        }
+    }
+
+    private fun requestLocationUpdate() {
+        val locationRequest = LocationRequest.create().apply {
+            interval = 10000
+            fastestInterval = 5000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    currentLocation = location
+
+                    // 어댑터에 현재 위치 전달
+                    if (::pickupAdapter.isInitialized) {
+                        pickupAdapter.updateCurrentLocation(location)
+                    }
+
+                    fusedLocationClient.removeLocationUpdates(this)
+                    applyFilterAndSort()
+                }
+            }
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, mainLooper)
         }
     }
 
@@ -230,6 +266,10 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
                 is NetworkResult.Success -> {
                     allPickups.clear()
                     allPickups.addAll(result.data)
+
+                    // 좌표 정보가 없는 수거지들에 대해 지오코딩 수행
+                    geocodePickupsWithoutCoordinates()
+
                     applyFilterAndSort()
                     showLoading(false)
                 }
@@ -239,6 +279,61 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
                 }
                 is NetworkResult.Loading -> {
                     // 로딩 중
+                }
+            }
+        }
+    }
+
+    private fun geocodePickupsWithoutCoordinates() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val pickupsToGeocode = withContext(Dispatchers.Main) {
+                    allPickups.toList().filter { pickup ->
+                        pickup.latitude == null || pickup.longitude == null
+                    }
+                }
+
+                pickupsToGeocode.forEachIndexed { index, pickup ->
+                    val address = pickup.address?.roadNameAddress ?: pickup.address?.name
+                    if (!address.isNullOrBlank()) {
+                        try {
+                            when (val result = repository.geocodeAddress(address)) {
+                                is NetworkResult.Success -> {
+                                    pickup.latitude = result.data.latitude
+                                    pickup.longitude = result.data.longitude
+                                }
+                                is NetworkResult.Error -> {
+                                    pickup.latitude = 37.5666805
+                                    pickup.longitude = 126.9784147
+                                }
+                                else -> {}
+                            }
+                        } catch (e: Exception) {
+                            pickup.latitude = 37.5666805
+                            pickup.longitude = 126.9784147
+                        }
+
+                        if (index < pickupsToGeocode.size - 1) {
+                            kotlinx.coroutines.delay(200)
+                        }
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    // 지오코딩 완료 후 어댑터에 현재 위치 업데이트
+                    if (::pickupAdapter.isInitialized) {
+                        pickupAdapter.updateCurrentLocation(currentLocation)
+                    }
+                    applyFilterAndSort()
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showError("일부 수거지 위치 정보를 가져올 수 없습니다.")
+                    if (::pickupAdapter.isInitialized) {
+                        pickupAdapter.updateCurrentLocation(currentLocation)
+                    }
+                    applyFilterAndSort()
                 }
             }
         }
@@ -287,7 +382,6 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
                     filtered
                 }
             }
-
             "time" -> {
                 filtered.sortedBy { pickup ->
                     pickup.pickupDate?.let { dateString ->
@@ -306,6 +400,7 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
         filteredPickups.addAll(sorted)
         pickupAdapter.notifyDataSetChanged()
         updateEmptyState()
+        updateSelectedCount()
     }
 
     private fun startNavigation(selectedPickups: List<Pickup>) {
@@ -314,11 +409,9 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
             return
         }
 
-        // NavigationActivity로 이동
         val intent = Intent(this, NavigationActivity::class.java)
         intent.putParcelableArrayListExtra("selectedPickups", ArrayList(selectedPickups))
 
-        // 현재 위치 정보 전달
         currentLocation?.let { location ->
             intent.putExtra("currentLatitude", location.latitude)
             intent.putExtra("currentLongitude", location.longitude)
@@ -342,14 +435,13 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
         }
 
         val optimalPickups = incompletePickups
+            .filter { it.latitude != null && it.longitude != null }
             .sortedBy { pickup ->
-                val lat = pickup.latitude ?: 0.0
-                val lng = pickup.longitude ?: 0.0
                 calculateDistance(
                     currentLocation!!.latitude,
                     currentLocation!!.longitude,
-                    lat,
-                    lng
+                    pickup.latitude!!,
+                    pickup.longitude!!
                 )
             }
             .take(5)
@@ -388,6 +480,9 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
         val selectedCount = pickupAdapter.getSelectedPickups().size
         selectedCountText.text = "${selectedCount}개 선택됨"
         bottomActionLayout.visibility = if (selectedCount > 0) View.VISIBLE else View.GONE
+
+        // 내비게이션 FAB 표시/숨김
+        fabNavigation.visibility = if (selectedCount > 0) View.VISIBLE else View.GONE
     }
 
     private fun updateEmptyState() {
@@ -442,7 +537,7 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
     private fun showPickupDetailDialog(pickup: Pickup) {
         val message = buildString {
-            append("주소: ${pickup.address ?: "주소 정보 없음"}\n")
+            append("주소: ${pickup.address?.roadNameAddress ?: pickup.address?.name ?: "주소 정보 없음"}\n")
             append("상태: ${if (pickup.isCompleted) "완료" else "미완료"}\n")
 
             pickup.pickupDate?.let { dateString ->
@@ -504,9 +599,21 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == MAP_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK) {
+            data?.getParcelableArrayListExtra<Pickup>("selectedPickups")?.let { updatedSelection ->
+                allPickups.forEach { pickup ->
+                    pickup.isSelected = updatedSelection.any { it.pickupId == pickup.pickupId }
+                }
+                applyFilterAndSort()
+            }
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menu?.add(0, 1, 0, "새로고침")
-        menu?.add(0, 2, 0, "설정")
+        menuInflater.inflate(R.menu.menu_pickup_list, menu)
         return true
     }
 
@@ -516,39 +623,30 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
                 finish()
                 true
             }
-            1 -> {
+            R.id.action_refresh -> {
                 loadPickups()
                 true
             }
-            2 -> {
-                showSettingsDialog()
+            R.id.action_logout -> {
+                showLogoutDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    private fun showSettingsDialog() {
-        val options = arrayOf("알림 설정", "자동 새로고침", "앱 정보")
-
+    private fun showLogoutDialog() {
         AlertDialog.Builder(this)
-            .setTitle("설정")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> Toast.makeText(this, "알림 설정 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show()
-                    1 -> Toast.makeText(this, "자동 새로고침 설정 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show()
-                    2 -> showAppInfoDialog()
+            .setTitle("로그아웃")
+            .setMessage("로그아웃 하시겠습니까?")
+            .setPositiveButton("로그아웃") { _, _ ->
+                with(sharedPreferences.edit()) {
+                    clear()
+                    apply()
                 }
+                finish()
             }
-            .setNegativeButton("닫기", null)
-            .show()
-    }
-
-    private fun showAppInfoDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("앱 정보")
-            .setMessage("RefreshDriver v1.0\n수거지 관리 애플리케이션")
-            .setPositiveButton("확인", null)
+            .setNegativeButton("취소", null)
             .show()
     }
 

@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.refreshdriver"
-        minSdk 24
+        minSdk 26
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -88,6 +88,7 @@ dependencies {
 
     // 카카오 SDK
     implementation 'com.kakaomobility.knsdk:knsdk_ui:1.9.4'
+
 
     // 권한 처리
     implementation 'com.karumi:dexter:6.2.3'

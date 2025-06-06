@@ -8,7 +8,7 @@
     android:layout_margin="4dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:strokeWidth="1dp">
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- 헤더 -->
+        <!-- 헤더: 아이콘, 이름, 칩들, 체크박스 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,8 +27,9 @@
                 android:id="@+id/iconPickup"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_mylocation"
-                android:layout_marginEnd="8dp" />
+                android:src="@drawable/ic_location"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="수거지 아이콘" />
 
             <TextView
                 android:id="@+id/textPickupName"
@@ -38,7 +39,9 @@
                 android:text="수거지명"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorTextPrimary"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/chipDistrict"
@@ -46,10 +49,12 @@
                 android:layout_height="wrap_content"
                 android:text="구"
                 android:textSize="10sp"
-                android:textColor="@android:color/white"
-                android:background="@android:color/holo_blue_dark"
+                android:textColor="@color/colorWhite"
+                android:background="@drawable/chip_background"
                 android:padding="4dp"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="4dp"
+                android:minWidth="32dp"
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/chipStatus"
@@ -57,15 +62,18 @@
                 android:layout_height="wrap_content"
                 android:text="상태"
                 android:textSize="10sp"
-                android:textColor="@android:color/white"
-                android:background="@android:color/holo_green_dark"
+                android:textColor="@color/colorWhite"
+                android:background="@drawable/chip_background"
                 android:padding="4dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                android:minWidth="48dp"
+                android:gravity="center" />
 
             <CheckBox
                 android:id="@+id/checkBoxSelection"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:contentDescription="선택" />
 
         </LinearLayout>
 
@@ -76,13 +84,13 @@
             android:layout_height="wrap_content"
             android:text="주소"
             android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="@color/colorTextSecondary"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             android:maxLines="2"
             android:ellipsize="end" />
 
-        <!-- 시간 및 거리 정보 -->
+        <!-- 시간, 거리, 완료 버튼 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -96,9 +104,10 @@
                 android:layout_weight="1"
                 android:text="시간"
                 android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:drawableStart="@android:drawable/ic_menu_recent_history"
-                android:drawablePadding="4dp" />
+                android:textColor="@color/colorTextSecondary"
+                android:drawableStart="@drawable/ic_time"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical" />
 
             <TextView
                 android:id="@+id/textPickupDistance"
@@ -106,10 +115,12 @@
                 android:layout_height="wrap_content"
                 android:text="거리"
                 android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:drawableStart="@android:drawable/ic_menu_mylocation"
+                android:textColor="@color/colorTextSecondary"
+                android:drawableStart="@drawable/ic_my_location"
                 android:drawablePadding="4dp"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="8dp"
+                android:gravity="center_vertical"
+                android:minWidth="60dp" />
 
             <Button
                 android:id="@+id/buttonComplete"
@@ -117,10 +128,47 @@
                 android:layout_height="32dp"
                 android:text="수거완료"
                 android:textSize="10sp"
-                android:textColor="@android:color/white"
-                android:background="@android:color/holo_green_dark"
+                android:textColor="@color/colorWhite"
+                android:background="@drawable/button_success_background"
                 android:paddingHorizontal="12dp"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="8dp"
+                android:contentDescription="수거 완료 버튼" />
+
+        </LinearLayout>
+
+        <!-- 추가 정보 (기본적으로 숨김) -->
+        <LinearLayout
+            android:id="@+id/layoutAdditionalInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textWasteTypes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="폐기물: 일반폐기물, 재활용품"
+                android:textSize="11sp"
+                android:textColor="@color/colorTextSecondary"
+                android:drawableStart="@drawable/ic_list"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/textSpecialInstructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="특별 지시사항"
+                android:textSize="11sp"
+                android:textColor="@color/colorWarning"
+                android:drawableStart="@android:drawable/ic_dialog_info"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:maxLines="2"
+                android:ellipsize="end" />
 
         </LinearLayout>
 
