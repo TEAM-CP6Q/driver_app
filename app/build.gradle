@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id 'kotlin-parcelize'
 }
 
 android {
@@ -55,6 +56,7 @@ dependencies {
     implementation libs.androidx.ui.tooling.preview
     implementation libs.androidx.material3
 
+    implementation 'com.kakao.maps.open:android:2.9.5' // 최소 2.9.5 이상
 
     // 직접 지정하는 라이브러리들 (libs.versions.toml에 정의되지 않은 것들)
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -62,6 +64,10 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // 네트워크
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'

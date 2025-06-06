@@ -153,15 +153,18 @@ class PickupListActivity : AppCompatActivity(), PickupAdapter.OnPickupClickListe
 
     private fun setupClickListeners() {
         // 지도 버튼 클릭 시 선택된 수거지와 함께 지도 액티비티 실행
+        // 지도 버튼 클릭 시
         fabMap.setOnClickListener {
             val selectedPickups = pickupAdapter.getSelectedPickups()
             val intent = Intent(this, MapActivity::class.java).apply {
                 putParcelableArrayListExtra("selectedPickups", ArrayList(selectedPickups))
+                putParcelableArrayListExtra("pickups", ArrayList(allPickups)) // 전체 목록도 전달
                 putExtra("currentLatitude", currentLocation?.latitude ?: 0.0)
                 putExtra("currentLongitude", currentLocation?.longitude ?: 0.0)
             }
             startActivity(intent)
         }
+
 
         // 내비게이션 버튼 클릭 시 기존 로직 유지
         fabNavigation.setOnClickListener {

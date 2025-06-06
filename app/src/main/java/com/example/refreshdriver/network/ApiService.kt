@@ -76,7 +76,75 @@ object ApiClient {
     val kakaoApiService: KakaoApiService = kakaoRetrofit.create(KakaoApiService::class.java)
 
     fun getKakaoAuthHeader(): String = "KakaoAK $KAKAO_API_KEY"
+
+    // 카카오 모빌리티 API 추가
+    private const val KAKAO_MOBILITY_BASE_URL = "https://apis-navi.kakaomobility.com/"
+    private const val KAKAO_MOBILITY_API_KEY = "KakaoAK 90fc3c147a2997ec441fd2cd8e87e2a8" // 실제 키로 교체
+
+    private val kakaoMobilityRetrofit = Retrofit.Builder()
+        .baseUrl(KAKAO_MOBILITY_BASE_URL)
+        .client(httpClient)
+        .addConverterFactory(GsonConverterFactory.create(gson))
+        .build()
+
+    val kakaoMobilityService: KakaoMobilityService =
+        kakaoMobilityRetrofit.create(KakaoMobilityService::class.java)
 }
+
+// 새 서비스 인터페이스 추가
+interface KakaoMobilityService {
+    @POST("v1/destinations/directions")
+    suspend fun getRoutes(
+        @Header("Authorization") authorization: String,
+        @Body request: RoutesRequest
+    ): Response<RoutesResponse>
+}
+
+// 요청/응답 모델 추가
+data class RoutesRequest(
+    val origin: Origin,
+    val destinations: List<Destination>,
+    val radius: Int = 5000,
+    val priority: String = "TIME"
+)
+
+data class Origin(
+    val x: Double,
+    val y: Double
+)
+
+data class Destination(
+    val x: Double,
+    val y: Double,
+    val key: String
+)
+
+data class RoutesResponse(
+    val trans_id: String,
+    val routes: List<Route>
+)
+
+data class Route(
+    val result_code: Int,
+    val result_msg: String,
+    val key: String,
+    val summary: RouteSummary,
+    val sections: List<Section>
+)
+
+data class RouteSummary(
+    val distance: Int,
+    val duration: Int
+)
+
+data class Section(
+    val roads: List<Road>
+)
+
+data class Road(
+    val vertexes: List<Double>
+)
+
 
 // 네트워크 결과 래퍼
 sealed class NetworkResult<T> {

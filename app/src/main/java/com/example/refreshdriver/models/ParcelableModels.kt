@@ -54,13 +54,6 @@ data class PickupParcelable(
         )
     }
 
-    override fun describeContents(): Int {
-        TODO("Not yet implemented")
-    }
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        TODO("Not yet implemented")
-    }
 }
 
 // 확장 함수 추가

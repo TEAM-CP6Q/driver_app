@@ -1,8 +1,8 @@
 package com.example.refreshdriver.models
 
-import android.os.Parcel
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
 // 로그인 요청 모델
 data class LoginRequest(
@@ -23,16 +23,27 @@ data class User(
     val role: String
 )
 
-// 수거지 모델
+// 주소 모델 (Parcelable로 변경)
+@Parcelize
+data class Address(
+    @SerializedName("name")
+    val name: String? = null,
+
+    @SerializedName("roadNameAddress")
+    val roadNameAddress: String? = null
+) : Parcelable
+
+// 수거지 모델 (Parcelable 자동 구현)
+@Parcelize
 data class Pickup(
     @SerializedName("pickupId")
     val pickupId: String,
 
     @SerializedName("address")
-    val address: Address?,
+    val address: Address? = null,
 
     @SerializedName("pickupDate")
-    val pickupDate: String?,
+    val pickupDate: String? = null,
 
     @SerializedName("isCompleted")
     var isCompleted: Boolean = false,
@@ -43,24 +54,7 @@ data class Pickup(
 
     // UI 상태
     var isSelected: Boolean = false
-) : Parcelable {
-    override fun describeContents(): Int {
-        TODO("Not yet implemented")
-    }
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        TODO("Not yet implemented")
-    }
-}
-
-// 주소 모델
-data class Address(
-    @SerializedName("name")
-    val name: String?,
-
-    @SerializedName("roadNameAddress")
-    val roadNameAddress: String?
-)
+) : Parcelable
 
 // 수거지 상세 정보 모델
 data class PickupDetails(
@@ -87,13 +81,14 @@ data class WasteDetail(
 )
 
 // 좌표 모델
+@Parcelize
 data class Coordinate(
     val id: String,
     val latitude: Double,
     val longitude: Double,
     val name: String,
     val address: String
-)
+) : Parcelable
 
 // 카카오 지오코딩 응답 모델
 data class KakaoGeocodingResponse(
