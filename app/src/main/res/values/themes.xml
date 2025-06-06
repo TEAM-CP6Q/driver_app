@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 메인 테마 -->
+    <style name="Theme.RefreshDriver" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@android:color/holo_blue_dark</item>
+        <item name="colorPrimaryDark">@android:color/holo_blue_dark</item>
+        <item name="colorAccent">@android:color/holo_orange_light</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorSecondary">@android:color/darker_gray</item>
+    </style>
+
+    <!-- 액션바 없는 테마 -->
+    <style name="Theme.RefreshDriver.NoActionBar" parent="Theme.RefreshDriver">
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+    </style>
+
+    <!-- 전체화면 테마 (내비게이션용) -->
+    <style name="Theme.RefreshDriver.Fullscreen" parent="Theme.RefreshDriver.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <!-- 버튼 스타일 -->
+    <style name="ButtonPrimary">
+        <item name="android:background">@android:color/holo_blue_dark</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <style name="ButtonSecondary">
+        <item name="android:background">@android:color/holo_orange_light</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">6dp</item>
+    </style>
+
+    <!-- 텍스트 스타일 -->
+    <style name="TextTitle">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+    <style name="TextSubtitle">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@android:color/darker_gray</item>
+    </style>
+
+    <style name="TextBody">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+    <style name="TextCaption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@android:color/darker_gray</item>
+    </style>
+
+    <!-- 카드 스타일 -->
+    <style name="CardStyle">
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:background">@android:color/white</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+
+    <!-- 입력 필드 스타일 -->
+    <style name="EditTextStyle">
+        <item name="android:layout_height">48dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:background">@android:drawable/edit_text</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+</resources>

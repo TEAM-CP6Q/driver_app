@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/colorBackgroundDark"
+    android:padding="32dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="REFRESH"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DRIVER"
+        android:textSize="18sp"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginBottom="40dp" />
+
+    <EditText
+        android:id="@+id/editTextEmail"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="E-mail"
+        android:inputType="textEmailAddress"
+        android:background="@drawable/edit_text_background"
+        android:padding="16dp"
+        android:textColor="@color/colorTextPrimary"
+        android:textColorHint="@color/colorTextHint"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/editTextPassword"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="비밀번호"
+        android:inputType="textPassword"
+        android:background="@drawable/edit_text_background"
+        android:padding="16dp"
+        android:textColor="@color/colorTextPrimary"
+        android:textColorHint="@color/colorTextHint"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/buttonLogin"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="로그인"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:background="@drawable/button_primary_background"
+        android:layout_marginBottom="16dp" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+</LinearLayout>

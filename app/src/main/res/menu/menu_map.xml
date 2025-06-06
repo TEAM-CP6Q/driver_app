@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_satellite"
+        android:title="위성지도"
+        android:icon="@drawable/ic_satellite"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_auto_select"
+        android:title="자동선택"
+        android:icon="@drawable/ic_auto_select"
+        app:showAsAction="ifRoom" />
+
+</menu>

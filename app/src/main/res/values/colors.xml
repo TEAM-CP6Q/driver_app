@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- 기본 색상 -->
+    <color name="colorPrimary">#4CAF50</color>
+    <color name="colorPrimaryDark">#388E3C</color>
+    <color name="colorAccent">#FF9800</color>
+
+    <!-- 상태 색상 -->
+    <color name="colorSuccess">#4CAF50</color>
+    <color name="colorWarning">#FF9800</color>
+    <color name="colorError">#F44336</color>
+    <color name="colorInfo">#2196F3</color>
+
+    <!-- 배경 색상 -->
+    <color name="colorBackgroundDark">#1E2A38</color>
+    <color name="colorBackgroundLight">#F8F9FA</color>
+    <color name="colorSelectedBackground">#E8F5E8</color>
+
+    <!-- 텍스트 색상 -->
+    <color name="colorTextPrimary">#212121</color>
+    <color name="colorTextSecondary">#757575</color>
+    <color name="colorTextHint">#BDBDBD</color>
+
+    <!-- 기본 색상 -->
+    <color name="colorWhite">#FFFFFF</color>
+    <color name="colorWhiteAlpha">#CCFFFFFF</color>
+    <color name="colorBlack">#000000</color>
+    <color name="colorCardStroke">#E0E0E0</color>
+</resources>

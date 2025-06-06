@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.refreshdriver">
+
+    <!-- 필수 권한 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 카카오맵을 위한 추가 권한 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <application
+        android:name=".RefreshApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.RefreshDriver"
+        android:usesCleartextTraffic="true">
+
+        <!-- 로그인 화면 (메인 액티비티) -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RefreshDriver.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 수거지 목록 화면 -->
+        <activity
+            android:name=".PickupListActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.RefreshDriver" />
+
+        <!-- 지도 화면 -->
+        <activity
+            android:name=".MapActivity"
+            android:exported="false"
+            android:parentActivityName=".PickupListActivity"
+            android:theme="@style/Theme.RefreshDriver" />
+
+        <!-- 내비게이션 화면 -->
+        <activity
+            android:name=".NavigationActivity"
+            android:exported="false"
+            android:parentActivityName=".PickupListActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:theme="@style/Theme.RefreshDriver.Fullscreen" />
+
+        <!-- 카카오맵 API 키 (실제 키로 교체 필요) -->
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="573a700f121bff5d3ea3960ff32de487" />
+
+    </application>
+
+</manifest>

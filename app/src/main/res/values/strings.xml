@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">RefreshDriver</string>
+    <!-- 로그인 화면 -->
+    <string name="login_title">REFRESH DRIVER</string>
+    <string name="email_hint">E-mail</string>
+    <string name="password_hint">비밀번호</string>
+    <string name="login_button">로그인</string>
+
+    <!-- 수거지 목록 -->
+    <string name="pickup_list_title">수거지 목록</string>
+    <string name="filter_all">전체</string>
+    <string name="filter_incomplete">미완료</string>
+    <string name="filter_complete">완료</string>
+    <string name="sort_distance">거리순</string>
+    <string name="sort_time">시간순</string>
+    <string name="auto_select">자동선택</string>
+    <string name="clear_selection">선택 초기화</string>
+    <string name="complete_pickup">수거 완료</string>
+
+    <!-- 지도 화면 -->
+    <string name="map_title">수거지 지도</string>
+    <string name="optimize_route">경로 최적화</string>
+    <string name="clear_route">경로 초기화</string>
+    <string name="current_location">현재 위치</string>
+
+    <!-- 내비게이션 화면 -->
+    <string name="navigation_title">내비게이션</string>
+    <string name="exit_navigation">종료</string>
+    <string name="pickup_complete">수거 완료</string>
+
+    <!-- 공통 메시지 -->
+    <string name="loading">로딩 중...</string>
+    <string name="error_network">네트워크 오류가 발생했습니다.</string>
+    <string name="error_location">위치 정보를 가져올 수 없습니다.</string>
+    <string name="permission_location">위치 권한이 필요합니다.</string>
+</resources>

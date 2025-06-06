@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 카카오 맵 -->
+    <com.kakao.vectormap.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 하단 정보 패널 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:elevation="8dp"
+        android:padding="16dp">
+
+        <!-- 경로 정보 -->
+        <TextView
+            android:id="@+id/textRouteInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="경로를 선택해주세요"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 버튼들 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonOptimizeRoute"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="경로 최적화"
+                android:textSize="12sp"
+                android:background="@android:color/holo_blue_dark"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/buttonClearRoute"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="경로 초기화"
+                android:textSize="12sp"
+                android:background="@android:color/darker_gray"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+        <!-- 프로그레스 바 -->
+        <ProgressBar
+            android:id="@+id/progressBarRoute"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- FAB들 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCurrentLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="180dp"
+        android:src="@android:drawable/ic_menu_mylocation"
+        app:backgroundTint="@android:color/holo_blue_bright" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabNavigation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="120dp"
+        android:src="@android:drawable/ic_media_play"
+        android:visibility="gone"
+        app:backgroundTint="@android:color/holo_green_dark" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabList"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="60dp"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        app:backgroundTint="@android:color/holo_orange_dark" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

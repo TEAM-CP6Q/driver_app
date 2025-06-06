@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- 필터 및 정렬 영역 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/colorBackgroundLight"
+            android:padding="16dp">
+
+            <!-- 필터 칩 그룹 -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/filterChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="전체"
+                    android:checked="true"
+                    style="@style/Widget.MaterialComponents.Chip.Choice" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipIncomplete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="미완료"
+                    style="@style/Widget.MaterialComponents.Chip.Choice" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipComplete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="완료"
+                    style="@style/Widget.MaterialComponents.Chip.Choice" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- 정렬 스피너 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="정렬: "
+                    android:textSize="14sp"
+                    android:textColor="@color/colorTextSecondary" />
+
+                <Spinner
+                    android:id="@+id/sortSpinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 메인 컨텐츠 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- 스와이프 새로고침 -->
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipeRefreshLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- 리사이클러뷰 -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewPickups"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:clipToPadding="false" />
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            <!-- 빈 상태 -->
+            <LinearLayout
+                android:id="@+id/emptyStateLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_empty_list"
+                    android:alpha="0.6" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="수거지가 없습니다"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorTextSecondary"
+                    android:layout_marginTop="16dp" />
+
+            </LinearLayout>
+
+            <!-- 로딩 -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <!-- 하단 액션 영역 -->
+        <LinearLayout
+            android:id="@+id/bottomActionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/colorBackgroundLight"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/selectedCountText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0개 선택됨"
+                android:textSize="14sp"
+                android:textColor="@color/colorTextSecondary"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/buttonAutoSelect"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="자동선택"
+                    android:textSize="12sp"
+                    android:background="@drawable/button_secondary_background"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/buttonClearSelection"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="선택 초기화"
+                    android:textSize="12sp"
+                    android:background="@drawable/button_secondary_background" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- FAB들 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="80dp"
+        android:src="@drawable/ic_map"
+        app:backgroundTint="@color/colorAccent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabNavigation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_navigation"
+        android:visibility="gone"
+        app:backgroundTint="@color/colorPrimary" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
