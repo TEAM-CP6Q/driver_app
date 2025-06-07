@@ -1,4 +1,3 @@
-// RefreshApplication.kt
 package com.example.refreshdriver
 
 import android.app.Application
@@ -22,9 +21,9 @@ class RefreshApplication : Application() {
         try {
             initializeKakaoMapSDK()
             initializeKakaoNaviSDK()
-            Log.d(TAG, "SDK 초기화 완료")
+            Log.d(TAG, "✅ SDK 설치 완료 - MainActivity에서 초기화 대기 중")
         } catch (e: Exception) {
-            Log.e(TAG, "SDK 초기화 중 오류 발생", e)
+            Log.e(TAG, "❌ SDK 설치 중 오류 발생", e)
         }
     }
 
@@ -38,17 +37,20 @@ class RefreshApplication : Application() {
         }
     }
 
+    /**
+     * 카카오 내비 SDK는 install만 수행 (초기화는 MainActivity에서)
+     */
     private fun initializeKakaoNaviSDK() {
         try {
             knsdk = KNSDK.apply {
-                // SDK 설치 및 파일 경로 설정
+                // SDK 설치 및 파일 경로 설정만 수행
                 val sdkPath = "$filesDir/RefreshDriver"
                 Log.d(TAG, "KNSDK 설치 경로: $sdkPath")
                 install(this@RefreshApplication, sdkPath)
             }
-            Log.d(TAG, "카카오 네비 SDK 초기화 성공")
+            Log.d(TAG, "카카오 내비 SDK 설치 성공 (초기화는 MainActivity에서 수행)")
         } catch (e: Exception) {
-            Log.e(TAG, "카카오 네비 SDK 초기화 실패", e)
+            Log.e(TAG, "카카오 내비 SDK 설치 실패", e)
         }
     }
 }
